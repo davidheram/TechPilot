@@ -1,12 +1,14 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton
 from PyQt6.QtCore import Qt 
 from core.claude import enviar_mensaje
+from core.memoria import cargar_historial, guardar_historial
 
 class VentanaJarvis(QMainWindow): 
     def __init__(self):
         super().__init__()
-        self.historial =[]
+        self.historial = cargar_historial()
         self.iniciar_ui()
+        self.mostrar_historial_previo()
 
     def iniciar_ui(self):
         self.setWindowTitle("Jarvis")
@@ -30,7 +32,20 @@ class VentanaJarvis(QMainWindow):
         self.boton_enviar.clicked.connect(self.enviar)
         layout_entrada.addWidget(self.boton_enviar)
 
+        boton_limpiar = QPushButton("Nueva conversacion")
+        boton_limpiar.clicked.connect(self.limpiar)
+        layout_entrada.addWidget(boton_limpiar)
+
         layout_principal.addLayout(layout_entrada)
+
+    def mostrar_historial_previo(self):
+        if self.historial:
+            self.area_chat.append("--- Conversacion anterior ---\n")
+            for mensaje in self.historial:
+                rol = "Tu" if mensaje["role"] == "user" else "Jarvis"
+                contenido = mensaje["content"].replace("\n", " ")
+                self.area_chat.append(f"{rol}: {contenido}\n")
+            self.area_chat.append("--- Nueva sesion ---\n")
 
     def enviar(self):
         mensaje = self.campo_texto.text().strip()
@@ -44,6 +59,14 @@ class VentanaJarvis(QMainWindow):
         respuesta = enviar_mensaje(self.historial)
         self.historial.append({"role": "assistant","content":respuesta})
 
+        guardar_historial(self.historial)
         self.area_chat.append(f"Jarvis: {respuesta}\n")
+  
+
+    def limpiar(self): 
+        self.historial = []
+        guardar_historial(self.historial)
+        self.area_chat.clear()
+        self.area_chat.append("Nueva conversación iniciada.\n")    
 
 
